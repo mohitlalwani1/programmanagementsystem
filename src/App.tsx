@@ -16,10 +16,8 @@ import { Documents } from '@/pages/Documents';
 import { Team } from '@/pages/Team';
 import { Settings } from '@/pages/Settings';
 
-function AppContent() {
+function AuthenticatedAppRoutes() {
   const { user, isLoading } = useAuth();
-}
-function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   if (isLoading) {
@@ -72,11 +70,10 @@ function App() {
       <Router>
         <Routes>
           <Route path="/home" element={<Home />} />
-          <Route path="/*" element={<AppContent />} />
+          <Route path="/*" element={<AuthenticatedAppRoutes />} />
         </Routes>
       </Router>
     </AuthProvider>
-    </Router>
   );
 }
 
