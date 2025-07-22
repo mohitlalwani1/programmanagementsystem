@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -36,6 +38,8 @@ const navigation = [
 ];
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+  const { user } = useAuth();
+
   return (
     <div className={cn(
       "relative flex flex-col bg-card border-r border-border transition-all duration-300",
@@ -91,12 +95,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {!collapsed && (
         <div className="p-4 border-t border-border">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-              <Users className="w-4 h-4" />
-            </div>
+            <Avatar className="w-8 h-8">
+              <AvatarImage src={user?.avatar} alt={user?.name} />
+              <AvatarFallback>
+                {user?.name?.split(' ').map(n => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">John Doe</p>
-              <p className="text-xs text-muted-foreground truncate">Admin</p>
+              <p className="text-sm font-medium truncate">{user?.name}</p>
+              <p className="text-xs text-muted-foreground truncate capitalize">{user?.role}</p>
             </div>
           </div>
         </div>
