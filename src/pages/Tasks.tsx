@@ -1,98 +1,18 @@
 import React from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, MoreHorizontal, User, Calendar, Clock, Link } from 'lucide-react';
+import { CreateTaskModal } from '@/components/modals/CreateTaskModal';
+import { tasksAPI } from '@/lib/api';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const tasks = [
-  {
-    id: '1',
-    title: 'Implement user authentication',
-    description: 'Set up JWT-based authentication system with refresh tokens',
-    status: 'in-progress' as const,
-    priority: 'high' as const,
-    assignee: { name: 'John Doe', avatar: '' },
-    reporter: { name: 'Sarah Johnson', avatar: '' },
-    projectName: 'E-commerce Platform',
-    startDate: '2024-01-15',
-    dueDate: '2024-01-25',
-    estimatedHours: 16,
-    actualHours: 12,
-    dependencies: ['Setup database schema'],
-    tags: ['backend', 'security']
-  },
-  {
-    id: '2',
-    title: 'Design product catalog UI',
-    description: 'Create responsive product catalog with filtering and search',
-    status: 'review' as const,
-    priority: 'medium' as const,
-    assignee: { name: 'Jane Smith', avatar: '' },
-    reporter: { name: 'Mike Chen', avatar: '' },
-    projectName: 'E-commerce Platform',
-    startDate: '2024-01-10',
-    dueDate: '2024-01-20',
-    estimatedHours: 24,
-    actualHours: 26,
-    dependencies: [],
-    tags: ['frontend', 'ui/ux']
-  },
-  {
-    id: '3',
-    title: 'Setup CI/CD pipeline',
-    description: 'Configure automated testing and deployment pipeline',
-    status: 'completed' as const,
-    priority: 'high' as const,
-    assignee: { name: 'Mike Wilson', avatar: '' },
-    reporter: { name: 'Emily Davis', avatar: '' },
-    projectName: 'Mobile App Redesign',
-    startDate: '2024-01-05',
-    dueDate: '2024-01-15',
-    estimatedHours: 20,
-    actualHours: 18,
-    dependencies: [],
-    tags: ['devops', 'automation']
-  },
-  {
-    id: '4',
-    title: 'API documentation update',
-    description: 'Update API documentation for new endpoints',
-    status: 'todo' as const,
-    priority: 'low' as const,
-    assignee: { name: 'Lisa Brown', avatar: '' },
-    reporter: { name: 'David Kim', avatar: '' },
-    projectName: 'Data Analytics Dashboard',
-    startDate: '2024-01-20',
-    dueDate: '2024-01-30',
-    estimatedHours: 8,
-    actualHours: 0,
-    dependencies: ['Complete API development'],
-    tags: ['documentation']
-  },
-  {
-    id: '5',
-    title: 'Security vulnerability assessment',
-    description: 'Conduct comprehensive security assessment of the application',
-    status: 'todo' as const,
-    priority: 'critical' as const,
-    assignee: { name: 'Alex Johnson', avatar: '' },
-    reporter: { name: 'Sarah Johnson', avatar: '' },
-    projectName: 'Security Audit Implementation',
-    startDate: '2024-02-01',
-    dueDate: '2024-02-10',
-    estimatedHours: 40,
-    actualHours: 0,
-    dependencies: [],
-    tags: ['security', 'audit']
-  }
-];
 
 const statusColors = {
   'todo': 'secondary',
@@ -109,6 +29,25 @@ const priorityColors = {
 } as const;
 
 export function Tasks() {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const response = await tasksAPI.getAll();
+      setTasks(response.data);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const todoTasks = tasks.filter(t => t.status === 'todo');
   const inProgressTasks = tasks.filter(t => t.status === 'in-progress');
   const reviewTasks = tasks.filter(t => t.status === 'review');
@@ -158,7 +97,7 @@ export function Tasks() {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center space-x-2">
               <User className="w-4 h-4 text-muted-foreground" />
-              <span>{task.assignee.name}</span>
+              <span>{task.assignee?.name || 'Unassigned'}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -168,7 +107,7 @@ export function Tasks() {
               <Clock className="w-4 h-4 text-muted-foreground" />
               <span>{task.actualHours}h / {task.estimatedHours}h</span>
             </div>
-            {task.dependencies.length > 0 && (
+            {task.dependencies?.length > 0 && (
               <div className="flex items-center space-x-2">
                 <Link className="w-4 h-4 text-muted-foreground" />
                 <span>{task.dependencies.length} dependencies</span>
@@ -176,7 +115,7 @@ export function Tasks() {
             )}
           </div>
 
-          {task.tags.length > 0 && (
+          {task.tags?.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {task.tags.map((tag) => (
                 <Badge key={tag} variant="outline" className="text-xs">
@@ -188,7 +127,7 @@ export function Tasks() {
 
           <div className="pt-2 border-t">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Reporter: {task.reporter.name}</span>
+              <span>Reporter: {task.reporter?.name || 'Unknown'}</span>
               <span>
                 Started {new Date(task.startDate).toLocaleDateString()}
               </span>
@@ -199,6 +138,17 @@ export function Tasks() {
     </Card>
   );
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading tasks...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -208,7 +158,7 @@ export function Tasks() {
             Track and manage tasks across all projects
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Task
         </Button>
@@ -226,7 +176,7 @@ export function Tasks() {
         <TabsContent value="all" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task._id} task={task} />
             ))}
           </div>
         </TabsContent>
@@ -234,7 +184,7 @@ export function Tasks() {
         <TabsContent value="todo" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {todoTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task._id} task={task} />
             ))}
           </div>
         </TabsContent>
@@ -242,7 +192,7 @@ export function Tasks() {
         <TabsContent value="in-progress" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {inProgressTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task._id} task={task} />
             ))}
           </div>
         </TabsContent>
@@ -250,7 +200,7 @@ export function Tasks() {
         <TabsContent value="review" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {reviewTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task._id} task={task} />
             ))}
           </div>
         </TabsContent>
@@ -258,11 +208,17 @@ export function Tasks() {
         <TabsContent value="completed" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {completedTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task._id} task={task} />
             ))}
           </div>
         </TabsContent>
       </Tabs>
+
+      <CreateTaskModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onSuccess={fetchTasks}
+      />
     </div>
   );
 }
