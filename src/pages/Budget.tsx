@@ -15,6 +15,7 @@ import {
   Download
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell } from 'recharts';
+import { Pie } from 'recharts';
 
 const budgetData = [
   {
