@@ -18,6 +18,7 @@ import { Settings } from '@/pages/Settings';
 
 function AppContent() {
   const { user, isLoading } = useAuth();
+}
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
