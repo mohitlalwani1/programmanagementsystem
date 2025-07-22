@@ -1,57 +1,18 @@
 import React from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Plus, MoreHorizontal, Users, Calendar, DollarSign, Target } from 'lucide-react';
+import { CreateProgramModal } from '@/components/modals/CreateProgramModal';
+import { programsAPI } from '@/lib/api';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const programs = [
-  {
-    id: '1',
-    name: 'Digital Transformation Initiative',
-    description: 'Comprehensive digital transformation across all business units',
-    status: 'active' as const,
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    budget: 2500000,
-    spent: 1200000,
-    manager: 'Sarah Johnson',
-    projectCount: 8,
-    riskCount: 3
-  },
-  {
-    id: '2',
-    name: 'Customer Experience Enhancement',
-    description: 'Improving customer touchpoints and satisfaction metrics',
-    status: 'active' as const,
-    startDate: '2024-02-01',
-    endDate: '2024-08-31',
-    budget: 800000,
-    spent: 320000,
-    manager: 'Mike Chen',
-    projectCount: 5,
-    riskCount: 1
-  },
-  {
-    id: '3',
-    name: 'Infrastructure Modernization',
-    description: 'Upgrading legacy systems and cloud migration',
-    status: 'planning' as const,
-    startDate: '2024-03-01',
-    endDate: '2024-11-30',
-    budget: 1500000,
-    spent: 0,
-    manager: 'Emily Davis',
-    projectCount: 6,
-    riskCount: 5
-  }
-];
 
 const statusColors = {
   'planning': 'secondary',
@@ -61,6 +22,36 @@ const statusColors = {
 } as const;
 
 export function Programs() {
+  const [programs, setPrograms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchPrograms();
+  }, []);
+
+  const fetchPrograms = async () => {
+    try {
+      const response = await programsAPI.getAll();
+      setPrograms(response.data);
+    } catch (error) {
+      console.error('Error fetching programs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading programs...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -70,7 +61,7 @@ export function Programs() {
             Manage strategic programs and their associated projects
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Program
         </Button>
@@ -78,10 +69,10 @@ export function Programs() {
 
       <div className="grid gap-6">
         {programs.map((program) => {
-          const budgetUtilization = (program.spent / program.budget) * 100;
+          const budgetUtilization = program.budget > 0 ? (program.spent / program.budget) * 100 : 0;
           
           return (
-            <Card key={program.id}>
+            <Card key={program._id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
@@ -126,7 +117,7 @@ export function Programs() {
                       <Users className="w-4 h-4" />
                       <span className="font-medium">Manager:</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{program.manager}</p>
+                    <p className="text-sm text-muted-foreground">{program.manager?.name || 'Not assigned'}</p>
                   </div>
 
                   <div className="space-y-2">
@@ -135,7 +126,7 @@ export function Programs() {
                       <span className="font-medium">Projects:</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {program.projectCount} active projects
+                      {program.projects?.length || 0} active projects
                     </p>
                   </div>
 
@@ -158,10 +149,10 @@ export function Programs() {
                   <Progress value={budgetUtilization} className="h-2" />
                 </div>
 
-                {program.riskCount > 0 && (
+                {program.risks?.length > 0 && (
                   <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                     <div className="flex items-center space-x-2 text-sm text-yellow-800 dark:text-yellow-200">
-                      <span className="font-medium">{program.riskCount} active risks</span>
+                      <span className="font-medium">{program.risks.length} active risks</span>
                       <span>require attention</span>
                     </div>
                   </div>
@@ -171,6 +162,12 @@ export function Programs() {
           );
         })}
       </div>
+
+      <CreateProgramModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onSuccess={fetchPrograms}
+      />
     </div>
   );
 }

@@ -1,83 +1,19 @@
 import React from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, MoreHorizontal, Users, Calendar, DollarSign, AlertTriangle } from 'lucide-react';
+import { CreateProjectModal } from '@/components/modals/CreateProjectModal';
+import { projectsAPI } from '@/lib/api';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const projects = [
-  {
-    id: '1',
-    name: 'E-commerce Platform',
-    description: 'Complete overhaul of the e-commerce platform with modern technologies',
-    status: 'in-progress' as const,
-    priority: 'high' as const,
-    progress: 75,
-    budget: 150000,
-    spent: 112500,
-    startDate: '2024-01-15',
-    endDate: '2024-03-15',
-    manager: 'Sarah Johnson',
-    team: ['John Doe', 'Jane Smith', 'Mike Wilson', 'Lisa Brown'],
-    risks: 2,
-    tasks: { total: 45, completed: 34 }
-  },
-  {
-    id: '2',
-    name: 'Mobile App Redesign',
-    description: 'Redesigning mobile application for better user experience',
-    status: 'in-progress' as const,
-    priority: 'medium' as const,
-    progress: 45,
-    budget: 80000,
-    spent: 36000,
-    startDate: '2024-01-20',
-    endDate: '2024-02-28',
-    manager: 'Mike Chen',
-    team: ['Alex Johnson', 'Emma Davis', 'Tom Wilson'],
-    risks: 1,
-    tasks: { total: 28, completed: 13 }
-  },
-  {
-    id: '3',
-    name: 'Data Analytics Dashboard',
-    description: 'Building comprehensive analytics dashboard for business insights',
-    status: 'completed' as const,
-    priority: 'low' as const,
-    progress: 100,
-    budget: 60000,
-    spent: 58000,
-    startDate: '2023-12-01',
-    endDate: '2024-01-30',
-    manager: 'Emily Davis',
-    team: ['Chris Lee', 'Anna Taylor'],
-    risks: 0,
-    tasks: { total: 32, completed: 32 }
-  },
-  {
-    id: '4',
-    name: 'Security Audit Implementation',
-    description: 'Implementing security recommendations from recent audit',
-    status: 'not-started' as const,
-    priority: 'critical' as const,
-    progress: 0,
-    budget: 120000,
-    spent: 0,
-    startDate: '2024-02-01',
-    endDate: '2024-04-30',
-    manager: 'David Kim',
-    team: ['Security Team'],
-    risks: 3,
-    tasks: { total: 0, completed: 0 }
-  }
-];
 
 const statusColors = {
   'not-started': 'secondary',
@@ -95,6 +31,25 @@ const priorityColors = {
 } as const;
 
 export function Projects() {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await projectsAPI.getAll();
+      setProjects(response.data);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const activeProjects = projects.filter(p => p.status === 'in-progress');
   const completedProjects = projects.filter(p => p.status === 'completed');
   const upcomingProjects = projects.filter(p => p.status === 'not-started');
@@ -145,7 +100,7 @@ export function Projects() {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center space-x-2">
               <Users className="w-4 h-4 text-muted-foreground" />
-              <span>{project.team.length} members</span>
+              <span>{project.team?.length || 0} members</span>
             </div>
             <div className="flex items-center space-x-2">
               <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -155,24 +110,35 @@ export function Projects() {
               <DollarSign className="w-4 h-4 text-muted-foreground" />
               <span>${project.spent.toLocaleString()} / ${project.budget.toLocaleString()}</span>
             </div>
-            {project.risks > 0 && (
+            {project.risks?.length > 0 && (
               <div className="flex items-center space-x-2 text-yellow-600">
                 <AlertTriangle className="w-4 h-4" />
-                <span>{project.risks} risks</span>
+                <span>{project.risks.length} risks</span>
               </div>
             )}
           </div>
 
           <div className="pt-2 border-t">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Manager: {project.manager}</span>
-              <span>Tasks: {project.tasks.completed}/{project.tasks.total}</span>
+              <span>Manager: {project.manager?.name || 'Not assigned'}</span>
+              <span>Tasks: {project.tasks?.length || 0}</span>
             </div>
           </div>
         </div>
       </CardContent>
     </Card>
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading projects...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -183,7 +149,7 @@ export function Projects() {
             Manage and track all your projects in one place
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Project
         </Button>
@@ -200,7 +166,7 @@ export function Projects() {
         <TabsContent value="active" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             {activeProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard key={project._id} project={project} />
             ))}
           </div>
         </TabsContent>
@@ -208,7 +174,7 @@ export function Projects() {
         <TabsContent value="completed" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             {completedProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard key={project._id} project={project} />
             ))}
           </div>
         </TabsContent>
@@ -216,7 +182,7 @@ export function Projects() {
         <TabsContent value="upcoming" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             {upcomingProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard key={project._id} project={project} />
             ))}
           </div>
         </TabsContent>
@@ -224,11 +190,17 @@ export function Projects() {
         <TabsContent value="all" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard key={project._id} project={project} />
             ))}
           </div>
         </TabsContent>
       </Tabs>
+
+      <CreateProjectModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        onSuccess={fetchProjects}
+      />
     </div>
   );
 }
