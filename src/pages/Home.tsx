@@ -2,10 +2,12 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Target, 
-  CheckSquare, 
-  Usimport { Target, CheckSquare, Users, BarChart3, Shield, Zap, ArrowRight, Star, TrendingUp, Globe, Play, CheckCircle, Users2, Zap as Zap2 } from 'lucide-react'on: Target,
+import { Target, CheckSquare, Users, BarChart3, Shield, Zap, ArrowRight, Star, TrendingUp, Globe, Play, CheckCircle, Users2, Zap as Zap2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+
+const features = [
+  {
+    icon: Target,
     title: 'Project Management',
     description: 'Organize and track projects with powerful tools and intuitive interfaces.'
   },
